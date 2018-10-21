@@ -11,7 +11,9 @@ class Property(
         @Json(name = "defaultValue")
         val defaultValue: String = "",
         @Json(name = "export")
-        val export: Boolean = true
+        val export: Boolean = true,
+        @Json(name = "rpc")
+        val rpc: String = "Disabled"
 ) {
     fun generate(className: String, bridges: MutableList<String>): String {
         val bridgeID = bridges.size
@@ -36,6 +38,6 @@ private fun udcBridge${bridgeID + 2}(): Variant {
 }
         """.trimIndent())
 
-        return "    registerProperty(\"$className\", \"$name\", $export, udcBridge$bridgeID(), udcBridge${bridgeID + 1}(), udcBridge${bridgeID + 2}())"
+        return "    registerProperty(\"$className\", \"$name\", $export, udcBridge$bridgeID(), udcBridge${bridgeID + 1}(), udcBridge${bridgeID + 2}(), ${rpc.getRPCType()})"
     }
 }

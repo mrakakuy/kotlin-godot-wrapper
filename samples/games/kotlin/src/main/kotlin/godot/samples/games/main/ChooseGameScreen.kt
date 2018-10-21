@@ -11,8 +11,12 @@ class ChooseGameScreen: Node() {
     lateinit var backButton: Button
     lateinit var playCatchBallButton: Button
     lateinit var playFastFinishButton: Button
+    lateinit var playMultiplayerButton: Button
 
     override fun _ready() {
+        playMultiplayerButton = (Button from getNode(NodePath("MenuButtons/PlayMultiplayerButton"))).apply {
+            connect("pressed", this@ChooseGameScreen, "_onPlayMultiplayerButtonPressed")
+        }
         playDodgeButton = (Button from getNode(NodePath("MenuButtons/PlayDodgeButton"))).apply {
             connect("pressed", this@ChooseGameScreen, "_onPlayDodgeButtonPressed")
         }
@@ -31,6 +35,10 @@ class ChooseGameScreen: Node() {
         backButton = (Button from getNode(NodePath("MenuButtons/BackButton"))).apply {
             connect("pressed", this@ChooseGameScreen, "_onBackButtonPressed")
         }
+    }
+
+    fun _onPlayMultiplayerButtonPressed() {
+        getTree().changeScene("res://Games/Multiplayer/Scenes/Lobby.tscn")
     }
 
     fun _onPlayDodgeButtonPressed() {

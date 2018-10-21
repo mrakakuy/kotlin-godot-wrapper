@@ -43,6 +43,9 @@
           },
           {
             "name": "_onPlayFastFinishButtonPressed"
+          },
+          {
+            "name": "_onPlayMultiplayerButtonPressed"
           }
         ]
       }

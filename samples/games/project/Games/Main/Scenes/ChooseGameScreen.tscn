@@ -27,7 +27,7 @@ use_filter = false
 font_data = ExtResource( 2 )
 _sections_unfolded = [ "Font", "Settings" ]
 
-[node name="ChooseGameScreen" type="Node"]
+[node name="ChooseGameScreen" type="Node" index="0"]
 
 script = ExtResource( 1 )
 
@@ -38,9 +38,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 margin_left = -241.0
-margin_top = -850.0
+margin_top = -994.0
 margin_right = 241.0
-margin_bottom = -50.0
+margin_bottom = -46.0
 rect_pivot_offset = Vector2( 0, 0 )
 rect_clip_content = false
 mouse_filter = 1
@@ -76,7 +76,7 @@ flat = false
 align = 1
 _sections_unfolded = [ "Size Flags", "custom_fonts" ]
 
-[node name="PlayPongButton" type="Button" parent="MenuButtons" index="1"]
+[node name="PlayMultiplayerButton" type="Button" parent="MenuButtons" index="1"]
 
 anchor_left = 0.0
 anchor_top = 0.0
@@ -97,12 +97,12 @@ toggle_mode = false
 enabled_focus_mode = 2
 shortcut = null
 group = null
-text = "Pong"
+text = "Multiplayer"
 flat = false
 align = 1
 _sections_unfolded = [ "Size Flags", "custom_fonts" ]
 
-[node name="PlayShmupButton" type="Button" parent="MenuButtons" index="2"]
+[node name="PlayPongButton" type="Button" parent="MenuButtons" index="2"]
 
 anchor_left = 0.0
 anchor_top = 0.0
@@ -123,12 +123,12 @@ toggle_mode = false
 enabled_focus_mode = 2
 shortcut = null
 group = null
-text = "Shoot'emUp"
+text = "Pong"
 flat = false
 align = 1
 _sections_unfolded = [ "Size Flags", "custom_fonts" ]
 
-[node name="PlayCatchBallButton" type="Button" parent="MenuButtons" index="3"]
+[node name="PlayShmupButton" type="Button" parent="MenuButtons" index="3"]
 
 anchor_left = 0.0
 anchor_top = 0.0
@@ -144,17 +144,17 @@ mouse_filter = 0
 mouse_default_cursor_shape = 0
 size_flags_horizontal = 1
 size_flags_vertical = 3
-custom_fonts/font = SubResource( 2 )
+custom_fonts/font = SubResource( 1 )
 toggle_mode = false
 enabled_focus_mode = 2
 shortcut = null
 group = null
-text = "Catch ball"
+text = "Shoot'emUp"
 flat = false
 align = 1
 _sections_unfolded = [ "Size Flags", "custom_fonts" ]
 
-[node name="PlayFastFinishButton" type="Button" parent="MenuButtons" index="4"]
+[node name="PlayCatchBallButton" type="Button" parent="MenuButtons" index="4"]
 
 anchor_left = 0.0
 anchor_top = 0.0
@@ -175,12 +175,12 @@ toggle_mode = false
 enabled_focus_mode = 2
 shortcut = null
 group = null
-text = "Fast finish"
+text = "Catch ball"
 flat = false
 align = 1
 _sections_unfolded = [ "Size Flags", "custom_fonts" ]
 
-[node name="BackButton" type="Button" parent="MenuButtons" index="5"]
+[node name="PlayFastFinishButton" type="Button" parent="MenuButtons" index="5"]
 
 anchor_left = 0.0
 anchor_top = 0.0
@@ -189,6 +189,32 @@ anchor_bottom = 0.0
 margin_top = 720.0
 margin_right = 482.0
 margin_bottom = 804.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 3
+custom_fonts/font = SubResource( 2 )
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+group = null
+text = "Fast finish"
+flat = false
+align = 1
+_sections_unfolded = [ "Size Flags", "custom_fonts" ]
+
+[node name="BackButton" type="Button" parent="MenuButtons" index="6"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 864.0
+margin_right = 482.0
+margin_bottom = 948.0
 rect_pivot_offset = Vector2( 0, 0 )
 rect_clip_content = false
 focus_mode = 2

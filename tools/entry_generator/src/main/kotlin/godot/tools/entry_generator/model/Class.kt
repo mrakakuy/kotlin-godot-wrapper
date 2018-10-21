@@ -83,7 +83,7 @@ private fun udcBridge$bridgeID(): CPointer<CFunction<(COpaquePointer?, COpaquePo
 }
             """.trimIndent())
                 bridges.add(bridge.toString())
-                appendln("    registerMethod(\"$classPath\", \"${m.name}\", udcBridge$bridgeID())")
+                appendln("    registerMethod(\"$classPath\", \"${m.name}\", udcBridge$bridgeID(), ${m.rpc.getRPCType()})")
 
                 generated.add(m.name)
             }

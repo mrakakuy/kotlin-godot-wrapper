@@ -1,0 +1,63 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://Games/Multiplayer/Scripts/Stage.gdns" type="Script" id=1]
+[ext_resource path="res://Games/Multiplayer/Scripts/Player.gdns" type="Script" id=2]
+[ext_resource path="res://Games/Shmup/Sprites/Player.png" type="Texture" id=3]
+
+[sub_resource type="CircleShape2D" id=1]
+
+custom_solver_bias = 0.0
+radius = 10.0
+
+[sub_resource type="CircleShape2D" id=2]
+
+custom_solver_bias = 0.0
+radius = 10.0
+
+[node name="Stage" type="Node"]
+
+script = ExtResource( 1 )
+
+[node name="player1" type="KinematicBody2D" parent="." index="0"]
+
+position = Vector2( 870.012, 116.067 )
+input_pickable = false
+collision_layer = 1
+collision_mask = 1
+collision/safe_margin = 0.08
+script = ExtResource( 2 )
+speed = 600
+velocity = Vector2( 0, 0 )
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="player1" index="0"]
+
+position = Vector2( 0.46777, -4.70361 )
+scale = Vector2( 5.95899, 6.08172 )
+shape = SubResource( 1 )
+
+[node name="Sprite" type="Sprite" parent="player1" index="1"]
+
+texture = ExtResource( 3 )
+
+[node name="player2" type="KinematicBody2D" parent="." index="1"]
+
+position = Vector2( 526.201, 332.594 )
+input_pickable = false
+collision_layer = 1
+collision_mask = 1
+collision/safe_margin = 0.08
+script = ExtResource( 2 )
+speed = 600
+velocity = Vector2( 0, 0 )
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="player2" index="0"]
+
+position = Vector2( -0.397302, -0.118772 )
+scale = Vector2( 6.33403, 6.37438 )
+shape = SubResource( 2 )
+
+[node name="Sprite" type="Sprite" parent="player2" index="1"]
+
+texture = ExtResource( 3 )
+
+

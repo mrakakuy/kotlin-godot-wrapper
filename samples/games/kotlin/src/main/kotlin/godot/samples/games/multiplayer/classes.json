@@ -1,0 +1,77 @@
+{
+    "package": "Games/Multiplayer/Scripts",
+
+    "registerClasses": [
+        {
+            "name": "Lobby",
+            "class": "godot.samples.games.multiplayer.Lobby",
+            "extends": "Control",
+            "methods": [
+                {
+                    "name": "_playerConnected",
+                    "arguments": ["Variant"]
+                },
+                {
+                    "name": "_playerDisconnected",
+                    "arguments": ["Variant"]
+                },
+                {
+                    "name": "_connectedOk"
+                },
+                {
+                    "name": "_connectedFail"
+                },
+                {
+                    "name": "_serverDisconnected"
+                },
+                {
+                    "name": "_ready"
+                },
+                {
+                    "name": "_onHostPressed"
+                },
+                {
+                    "name": "_onJoinPressed"
+                }
+            ]
+        },
+        {
+            "name": "Player",
+            "class": "godot.samples.games.multiplayer.Player",
+            "extends": "KinematicBody2D",
+            "methods": [
+                {
+                    "name": "_process",
+                    "arguments": ["Double"]
+                },
+                {
+                    "name": "setPosMov",
+                    "arguments": ["Vector2", "Vector2"],
+                    "rpc" : "Slave"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "speed",
+                    "type": "Double",
+                    "defaultValue": "600"
+                },
+                {
+                    "name": "velocity",
+                    "type": "Vector2",
+                    "defaultValue": "Vector2()"
+                }
+            ]
+        },
+        {
+            "name": "Stage",
+            "class": "godot.samples.games.multiplayer.Stage",
+            "extends": "Node",
+            "methods": [
+                {
+                    "name": "_ready"
+                }
+            ]
+        }
+    ]
+}

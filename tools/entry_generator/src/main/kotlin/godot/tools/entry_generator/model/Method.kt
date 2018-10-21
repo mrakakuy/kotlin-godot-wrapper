@@ -9,7 +9,9 @@ class Method(
         @Json(name = "returnType")
         val returnType: String = "Unit",
         @Json(name = "arguments")
-        val arguments: List<String> = listOf()
+        val arguments: List<String> = listOf(),
+        @Json(name = "rpc")
+        val rpc: String = "Disabled"
 ) {
     fun generate(): String {
         return buildString {

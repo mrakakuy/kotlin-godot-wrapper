@@ -77,3 +77,16 @@ fun String.getVariantType(): String {
         else -> "Variant.Type.OBJECT"
     }
 }
+
+fun String.getRPCType(): String {
+    return when (this) {
+        "Remote" -> "godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_REMOTE"
+        "Sync" -> "godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_SYNC"
+        "Master" -> "godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_MASTER"
+        "Slave" -> "godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_SLAVE"
+        "RemoteSync" -> "godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_REMOTESYNC"
+        "MasterSync" -> "godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_MASTERSYNC"
+        "SlaveSync" -> "godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_SLAVESYNC"
+        else -> "godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_DISABLED"
+    }
+}
