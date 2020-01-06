@@ -71,7 +71,7 @@ configurations {
 }
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.20-dev-1427"
+    implementation "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.20"
     compile fileTree(dir: 'lib', include: '*.jar')
     extraLibs fileTree(dir: 'lib', include: '*.jar')
 }
