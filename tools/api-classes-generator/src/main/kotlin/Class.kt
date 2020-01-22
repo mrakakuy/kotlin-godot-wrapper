@@ -1,4 +1,5 @@
 import com.beust.klaxon.Json
+import com.squareup.kotlinpoet.*
 import java.io.File
 
 
@@ -34,14 +35,54 @@ class Class(
 
 
     fun generate(path: String, tree: Graph<Class>, icalls: MutableSet<ICall>) {
-        for (p in properties)
-            for (m in methods)
-                p.applyGetterOrSetter(m)
-
+        for (p in properties) for (m in methods) p.applyGetterOrSetter(m)
 
         val out = File("$path/$name.kt")
         out.parentFile.mkdirs()
         out.createNewFile()
+
+        if (shouldGenerate) {
+            val packageName = "godot"
+            val className = ClassName(packageName, name)
+            val typeBuilder = TypeSpec.classBuilder(className).addModifiers(KModifier.OPEN)
+            typeBuilder.superclass(ClassName(packageName, if (baseClass.isEmpty()) "GodotObject" else baseClass))
+            if (isInstanciable) {
+                typeBuilder.addFunction(
+                        FunSpec.constructorBuilder()
+                                .callSuperConstructor("\"${if (name != "Thread") name else "_Thread"}\"")
+                                .build()
+                )
+            }
+            else {
+                typeBuilder.addFunction(
+                        FunSpec.constructorBuilder()
+                                .callSuperConstructor("\"\"")
+                                .build()
+                )
+            }
+            typeBuilder.addFunction(
+                    FunSpec.constructorBuilder()
+                            .addParameter("variant", ClassName("godot.core", "Variant"))
+                            .callSuperConstructor("variant")
+                            .build()
+            )
+            typeBuilder.addFunction(
+                    FunSpec.constructorBuilder()
+                            .addModifiers(KModifier.INTERNAL)
+                            .addParameter("mem", ClassName("kotlinx.cinterop", "COpaquePointer"))
+                            .callSuperConstructor("mem")
+                            .build()
+            )
+            typeBuilder.addFunction(
+                    FunSpec.constructorBuilder()
+                            .addModifiers(KModifier.INTERNAL)
+                            .addParameter("name", String::class)
+                            .callSuperConstructor("name")
+                            .build()
+            )
+            val kotlinFile = FileSpec.builder(packageName, className.simpleName).addType(typeBuilder.build()).build()
+            kotlinFile.writeTo(System.out)
+        }
 
         out.writeText(buildString {
             appendln("@file:Suppress(\"unused\", \"ClassName\", \"EnumEntryName\", \"FunctionName\", \"SpellCheckingInspection\", \"PARAMETER_NAME_CHANGED_ON_OVERRIDE\", \"UnusedImport\", \"PackageDirectoryMismatch\")")

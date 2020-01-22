@@ -1,10 +1,10 @@
 import com.beust.klaxon.Klaxon
 import java.io.File
 
+const val GODOT_API_PATH = "godot_api.json"
+const val GENERATED_PATH = "../../wrapper/godot-library/src/main/kotlin/godot/generated/"
 
-fun main(args: Array<String>) {
-    val GODOT_API_PATH = "godot_api.json"
-    val GENERATED_PATH = "../../wrapper/godot-library/src/main/kotlin/godot/generated/"
+fun main() {
 
     val text = File(GODOT_API_PATH).readText()
 
@@ -12,10 +12,7 @@ fun main(args: Array<String>) {
     val tree = classes.buildTree()
     val icalls = mutableSetOf<ICall>()
 
-    for (cl in classes)
-        //if (cl.name == "Object" || cl.name == "Node" || cl.name == "Reference" || cl.name == "Resource" || cl.name == "ResourceLoader" || cl.name == "SceneTree" || cl.name == "MainLoop" || cl.name == "Script" || cl.name == "Viewport") // FIXME: remove line
-        cl.generate(GENERATED_PATH, tree, icalls)
-
+    for (cl in classes) cl.generate(GENERATED_PATH, tree, icalls)
 
     val icallsFile = File("$GENERATED_PATH/__icalls.kt")
     icallsFile.parentFile.mkdirs()
