@@ -1,6 +1,7 @@
 import com.beust.klaxon.Json
 import com.squareup.kotlinpoet.*
 import java.io.File
+import kotlin.math.sign
 
 
 class Class(
@@ -21,8 +22,8 @@ class Class(
         @Json(name = "methods")
         val methods: List<Method>,
         @Json(name = "enums")
-        val enums: List<Enum>
-) {
+        val enums: List<Enum>) {
+    
     val oldName: String = name
     val shouldGenerate: Boolean
 
@@ -80,6 +81,12 @@ class Class(
                             .callSuperConstructor("name")
                             .build()
             )
+            for (enum in enums) typeBuilder.addType(enum.generated)
+            val signalClassBuilder = TypeSpec.classBuilder("Signal")
+            val signalCompanionObjectBuilder = TypeSpec.companionObjectBuilder()
+            for (signal in signals) signalCompanionObjectBuilder.addProperty(signal.generated)
+            signalClassBuilder.addType(signalCompanionObjectBuilder.build())
+            typeBuilder.addType(signalClassBuilder.build())
             val kotlinFile = FileSpec.builder(packageName, className.simpleName).addType(typeBuilder.build()).build()
             kotlinFile.writeTo(System.out)
         }
@@ -131,7 +138,7 @@ class Class(
                 appendln("    class Signal {")
                 appendln("        companion object {")
                 for (sig in signals)
-                    appendln("            ${sig.generate()}")
+                    appendln("            ${sig.gene()}")
                 appendln("        }")
                 appendln("    }")
                 appendln()
