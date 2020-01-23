@@ -36,7 +36,11 @@ class Class(
 
 
     fun generate(path: String, tree: Graph<Class>, icalls: MutableSet<ICall>) {
-        for (p in properties) for (m in methods) p.applyGetterOrSetter(m)
+        properties.forEach { propertie ->
+            methods.forEach {
+                propertie applyGetterOrSetter it
+            }
+        }
 
         val out = File("$path/$name.kt")
         out.parentFile.mkdirs()
@@ -81,10 +85,14 @@ class Class(
                             .callSuperConstructor("name")
                             .build()
             )
-            for (enum in enums) typeBuilder.addType(enum.generated)
+            enums.forEach {
+                typeBuilder.addType(it.generated)
+            }
             val signalClassBuilder = TypeSpec.classBuilder("Signal")
             val signalCompanionObjectBuilder = TypeSpec.companionObjectBuilder()
-            for (signal in signals) signalCompanionObjectBuilder.addProperty(signal.generated)
+            signals.forEach {
+                signalCompanionObjectBuilder.addProperty(it.generated)
+            }
             signalClassBuilder.addType(signalCompanionObjectBuilder.build())
             typeBuilder.addType(signalClassBuilder.build())
             val kotlinFile = FileSpec.builder(packageName, className.simpleName).addType(typeBuilder.build()).build()

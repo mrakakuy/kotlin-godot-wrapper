@@ -18,11 +18,13 @@ class Enum(
                         .build()
         )
         enumBuilder.addProperty("id", Long::class)
-        for (value in values) enumBuilder.addEnumConstant(
-                value.key, TypeSpec.anonymousClassBuilder()
-                .addSuperclassConstructorParameter("%L", value.value)
-                .build()
-        )
+        values.forEach { (key, value) ->
+            enumBuilder.addEnumConstant(
+                     key, TypeSpec.anonymousClassBuilder()
+                    .addSuperclassConstructorParameter("%L", value)
+                    .build()
+            )
+        }
         val companion = TypeSpec.companionObjectBuilder()
                 .addFunction(FunSpec.builder("fromInt")
                         .addParameter("value", Long::class)

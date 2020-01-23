@@ -35,7 +35,7 @@ class Property(
     }
 
 
-    fun applyGetterOrSetter(method: Method) {
+    infix fun applyGetterOrSetter(method: Method) {
         if (name == "")
             return
 
