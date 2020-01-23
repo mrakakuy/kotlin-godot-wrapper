@@ -27,6 +27,8 @@ class Class(
     val oldName: String = name
     val shouldGenerate: Boolean
 
+    lateinit var className: ClassName
+
     init {
         name = name.escapeUnderscore()
         baseClass = baseClass.escapeUnderscore()
@@ -46,11 +48,17 @@ class Class(
         out.parentFile.mkdirs()
         out.createNewFile()
 
+        val packageName = "godot"
+        className = ClassName(packageName, name)
         if (shouldGenerate) {
-            val packageName = "godot"
-            val className = ClassName(packageName, name)
+
+            //Create Types
             val typeBuilder = TypeSpec.classBuilder(className).addModifiers(KModifier.OPEN)
+
+            //Set super class
             typeBuilder.superclass(ClassName(packageName, if (baseClass.isEmpty()) "GodotObject" else baseClass))
+
+            //Constructors
             if (isInstanciable) {
                 typeBuilder.addFunction(
                         FunSpec.constructorBuilder()
@@ -85,15 +93,29 @@ class Class(
                             .callSuperConstructor("name")
                             .build()
             )
+
+            //Enums
             enums.forEach {
                 typeBuilder.addType(it.generated)
             }
             val signalClassBuilder = TypeSpec.classBuilder("Signal")
             val signalCompanionObjectBuilder = TypeSpec.companionObjectBuilder()
+
+            //Signals
             signals.forEach {
                 signalCompanionObjectBuilder.addProperty(it.generated)
             }
             signalClassBuilder.addType(signalCompanionObjectBuilder.build())
+
+            //Casts
+            val castsCompanion = TypeSpec.companionObjectBuilder()
+            if (isSingleton) castsCompanion.addAnnotation(ClassName("kotlin.native", "ThreadLocal"))
+            generateCasts(tree).forEach {
+                castsCompanion.addFunction(it)
+            }
+            typeBuilder.addType(castsCompanion.build())
+
+            //Build Type and create file
             typeBuilder.addType(signalClassBuilder.build())
             val kotlinFile = FileSpec.builder(packageName, className.simpleName).addType(typeBuilder.build()).build()
             kotlinFile.writeTo(System.out)
@@ -202,17 +224,26 @@ class Class(
     }
 
 
-    private fun generateCasts(tree: Graph<Class>): String {
-        return buildString {
-            var node = tree.nodes.find { it.value.name == name }!!.parent
+    private fun generateCasts(tree: Graph<Class>): List<FunSpec> {
+        val funSpecs = mutableListOf<FunSpec>()
+        var node = tree.nodes.find { it.value.name == name }!!.parent
 
-            while (node != null) {
-                appendln("        infix fun from(other: ${node.value.name}): $name = $name(\"\").apply { setRawMemory(other.rawMemory) }")
-                node = node.parent
-            }
-            appendln("        infix fun from(other: Variant): $name = fromVariant($name(\"\"), other)")
-            appendln()
-            appendln()
+        while (node != null) {
+            funSpecs.add(
+                    FunSpec.builder("from")
+                    .addModifiers(KModifier.INFIX)
+                    .addParameter("other", ClassName(if (classes.contains(node.value)) "godot" else "godot.core", node.value.name))
+                    .addStatement("return $name(\"\").apply { setRawMemory(other.rawMemory) }").build()
+            )
+            node = node.parent
         }
+        funSpecs.add(
+                FunSpec.builder("from")
+                        .addModifiers(KModifier.INFIX)
+                        .addParameter("other", ClassName("godot.core", "Variant"))
+                        .addStatement("return fromVariant($name(\"\"), other)")
+                        .build()
+        )
+        return funSpecs
     }
 }
