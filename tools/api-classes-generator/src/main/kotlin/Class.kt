@@ -1,7 +1,6 @@
 import com.beust.klaxon.Json
 import com.squareup.kotlinpoet.*
 import java.io.File
-import kotlin.math.sign
 
 
 class Class(
@@ -107,13 +106,20 @@ class Class(
             }
             signalClassBuilder.addType(signalCompanionObjectBuilder.build())
 
+            val baseCompanion = TypeSpec.companionObjectBuilder()
+            if (isSingleton) baseCompanion.addAnnotation(ClassName("kotlin.native", "ThreadLocal"))
             //Casts
-            val castsCompanion = TypeSpec.companionObjectBuilder()
-            if (isSingleton) castsCompanion.addAnnotation(ClassName("kotlin.native", "ThreadLocal"))
             generateCasts(tree).forEach {
-                castsCompanion.addFunction(it)
+                baseCompanion.addFunction(it)
             }
-            typeBuilder.addType(castsCompanion.build())
+            //Constants
+            constants.forEach { (key, value) ->
+                baseCompanion.addProperty(
+                        PropertySpec.builder(key, Long::class)
+                                .addModifiers(KModifier.CONST, KModifier.FINAL).initializer("%L", value).build()
+                )
+            }
+            typeBuilder.addType(baseCompanion.build())
 
             //Build Type and create file
             typeBuilder.addType(signalClassBuilder.build())
