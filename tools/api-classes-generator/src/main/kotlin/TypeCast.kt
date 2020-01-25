@@ -1,3 +1,37 @@
+private val coreTypes = listOf(//"Array", // TODO: kotlin arrays?
+        "GDArray",
+        "Basis",
+        "Color",
+        "Dictionary",
+        "GodotError",
+        "NodePath",
+        "Plane",
+        "PoolByteArray",
+        "PoolIntArray",
+        "PoolRealArray",
+        "PoolStringArray",
+        "PoolVector2Array",
+        "PoolVector3Array",
+        "PoolColorArray",
+        "PoolIntArray",
+        "PoolRealArray",
+        "Quat",
+        "Rect2",
+        "AABB",
+        "RID",
+        "String",
+        "Transform",
+        "Transform2D",
+        "Variant",
+        "Vector2",
+        "Vector3")
+
+private val coreTypeAdaptedForKotlin = listOf("AABB", "Basis", "Color", "Plane", "Quat", "Rect2", "Transform", "Transform2D", "Vector2", "Vector3")
+
+private val kotlinReservedNames = listOf("class", "enum", "interface", "in", "var", "val", "Char", "Short", "Boolean", "Int", "Long", "Float", "Double", "operator", "object") // TODO: smth more?
+
+private val primitives = listOf("Long", "Double", "Boolean", "Unit")
+
 fun String.escapeUnderscore(): String {
     if (this == "")
         return this
@@ -33,59 +67,13 @@ fun String.isEnum(): Boolean {
     return this.indexOf("enum.") == 0
 }
 
-fun String.isPrimitive(): Boolean {
-    val primitives = listOf("Long", "Double", "Boolean", "Unit")
-    return primitives.find { s -> s == this } != null
-}
+fun String.isPrimitive() = primitives.find { s -> s == this } != null
 
-fun String.isCoreTypeAdaptedForKotlin(): Boolean {
-    val types = listOf("AABB", "Basis", "Color", "Plane", "Quat", "Rect2", "Transform", "Transform2D", "Vector2", "Vector3")
-    return types.find { s -> s == this } != null
-}
+fun String.isCoreTypeAdaptedForKotlin() = coreTypeAdaptedForKotlin.find { s -> s == this } != null
 
-fun String.isCoreType(): Boolean {
-    val coreTypes = listOf(//"Array", // TODO: kotlin arrays?
-            "GDArray",
-            "Basis",
-            "Color",
-            "Dictionary",
-            "GodotError",
-            "NodePath",
-            "Plane",
-            "PoolByteArray",
-            "PoolIntArray",
-            "PoolRealArray",
-            "PoolStringArray",
-            "PoolVector2Array",
-            "PoolVector3Array",
-            "PoolColorArray",
-            "PoolIntArray",
-            "PoolRealArray",
-            "Quat",
-            "Rect2",
-            "AABB",
-            "RID",
-            "String",
-            "Transform",
-            "Transform2D",
-            "Variant",
-            "Vector2",
-            "Vector3")
-    return coreTypes.find { s -> s == this } != null
-}
+fun String.isCoreType() = coreTypes.find { s -> s == this } != null
 
-
-
-fun String.escapeKotlinReservedNames(): String {
-    val names = listOf("class", "enum", "interface", "in", "var", "val", "Char", "Short", "Boolean", "Int", "Long", "Float", "Double", "operator", "object") // TODO: smth more?
-
-    if (names.find { s -> s == this } != null)
-        return "_" + this
-    return this
-}
-
-
-
+fun String.escapeKotlinReservedNames() = if (kotlinReservedNames.find { s -> s == this } != null) "_$this" else this
 
 fun String.convertToCamelCase(): String {
     if (this == "")

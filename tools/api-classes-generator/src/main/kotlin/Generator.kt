@@ -4,9 +4,8 @@ import java.io.File
 const val GODOT_API_PATH = "godot_api.json"
 const val GENERATED_PATH = "../../wrapper/godot-library/src/main/kotlin/godot/generated/"
 
-val classes: List<Class> = Klaxon().parseArray(File(GODOT_API_PATH).readText())!!
-
 fun main() {
+    val classes: List<Class> = Klaxon().parseArray(File(GODOT_API_PATH).readText())!!
 
     val tree = classes.buildTree()
     val icalls = mutableSetOf<ICall>()

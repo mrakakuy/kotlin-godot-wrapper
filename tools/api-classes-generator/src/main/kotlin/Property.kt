@@ -1,4 +1,8 @@
 import com.beust.klaxon.Json
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.PropertySpec
 
 
 class Property(
@@ -34,41 +38,57 @@ class Property(
             type = "Material"
     }
 
+    fun generate(cl: Class, tree: Graph<Class>, icalls: MutableSet<ICall>): PropertySpec? {
+        if (!hasValidGetter && !hasValidSetter) return null
+        if (cl.name == "CPUParticles" && name == "scale") name = "_scale"
 
-    infix fun applyGetterOrSetter(method: Method) {
-        if (name == "")
-            return
-
-        when (method.name) {
-            getter -> {
-                if (method.returnType == "Unit" || method.arguments.size > 1 || method.isVirtual)
-                    return
-                if (index == -1 && method.arguments.size == 1)
-                    return
-                if (method.arguments.size == 1 && method.arguments[0].type != "Long")
-                    return
-
-                validGetter = method
-                hasValidGetter = true
-                method.isGetterOrSetter = true
-            }
-            setter -> {
-                if (method.returnType != "Unit" || method.arguments.size > 2 || method.isVirtual)
-                    return
-                if (index == -1 && method.arguments.size == 2)
-                    return
-                if (method.arguments.size == 2 && method.arguments[0].type != "Long")
-                    return
-
-                validSetter = method
-                hasValidSetter = true
-                method.isGetterOrSetter = true
-            }
+        val modifiers = mutableListOf<KModifier>()
+        if (!cl.isSingleton) {
+            modifiers.add(if (tree.doAncestorsHaveProperty(cl, this)) KModifier.OVERRIDE else KModifier.OPEN)
         }
+        val propertyType = ClassName(if (type.isCoreType()) "godot.core" else "godot", type)
+        val propertySpecBuilder = PropertySpec.builder(
+                "name",
+                propertyType,
+                modifiers)
+
+        if (hasValidSetter) {
+            propertySpecBuilder.mutable()
+            val icall = if (index != -1)
+                ICall("Unit", listOf(Argument("idx", "Long"), Argument("value", type)))
+            else
+                ICall("Unit", listOf(Argument("value", type)))
+            icalls.add(icall)
+            propertySpecBuilder.setter(
+                    FunSpec.setterBuilder()
+                            .addParameter("value", propertyType)
+                            .addStatement("${icall.name}(${validSetter.name}MethodBind, this.rawMemory")
+                            .build()
+            )
+        }
+        if (hasValidGetter) {
+            val icall = if (index != -1)
+                ICall(type, listOf(Argument("idx", "Long")))
+            else
+                ICall(type, listOf())
+            icalls.add(icall)
+            propertySpecBuilder.getter(
+                    FunSpec.getterBuilder()
+                            //Hard to maintain but do not see how to do better (Pierre-Thomas Meisels)
+                            .addStatement("return ${icall.name}(${validGetter.name}MethodBind, this.rawMemory ${if (index != -1) ", $index, value)" else ", value)"}")
+                            .build()
+            )
+        }
+        else propertySpecBuilder.getter(
+                FunSpec.getterBuilder()
+                        .addStatement("throw UninitializedPropertyAccessException(\"Cannot access property $name: has no getter\")")
+                        .build()
+        )
+
+        return propertySpecBuilder.build()
     }
 
-
-    fun generate(prefix: String, cl: Class, tree: Graph<Class>, icalls: MutableSet<ICall>): String {
+    fun gene(prefix: String, cl: Class, tree: Graph<Class>, icalls: MutableSet<ICall>): String {
         if (!hasValidGetter && !hasValidSetter)
             return ""
 
@@ -113,7 +133,6 @@ class Property(
                     append(", $index")
                 appendln(", value)")
 
-
                 if (type.isCoreTypeAdaptedForKotlin()) {
                     append("$prefix    ")
                     if (!cl.isSingleton)
@@ -130,6 +149,39 @@ class Property(
 
             appendln()
             appendln()
+        }
+    }
+
+
+    infix fun applyGetterOrSetter(method: Method) {
+        if (name == "")
+            return
+
+        when (method.name) {
+            getter -> {
+                if (method.returnType == "Unit" || method.arguments.size > 1 || method.isVirtual)
+                    return
+                if (index == -1 && method.arguments.size == 1)
+                    return
+                if (method.arguments.size == 1 && method.arguments[0].type != "Long")
+                    return
+
+                validGetter = method
+                hasValidGetter = true
+                method.isGetterOrSetter = true
+            }
+            setter -> {
+                if (method.returnType != "Unit" || method.arguments.size > 2 || method.isVirtual)
+                    return
+                if (index == -1 && method.arguments.size == 2)
+                    return
+                if (method.arguments.size == 2 && method.arguments[0].type != "Long")
+                    return
+
+                validSetter = method
+                hasValidSetter = true
+                method.isGetterOrSetter = true
+            }
         }
     }
 }

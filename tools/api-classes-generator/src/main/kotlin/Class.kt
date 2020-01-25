@@ -58,20 +58,11 @@ class Class(
             typeBuilder.superclass(ClassName(packageName, if (baseClass.isEmpty()) "GodotObject" else baseClass))
 
             //Constructors
-            if (isInstanciable) {
-                typeBuilder.addFunction(
-                        FunSpec.constructorBuilder()
-                                .callSuperConstructor("\"${if (name != "Thread") name else "_Thread"}\"")
-                                .build()
-                )
-            }
-            else {
-                typeBuilder.addFunction(
-                        FunSpec.constructorBuilder()
-                                .callSuperConstructor("\"\"")
-                                .build()
-                )
-            }
+            typeBuilder.addFunction(
+                    FunSpec.constructorBuilder()
+                            .callSuperConstructor(if (isInstanciable) "\"${if (name != "Thread") name else "_Thread"}\"" else "\"\"")
+                            .build()
+            )
             typeBuilder.addFunction(
                     FunSpec.constructorBuilder()
                             .addParameter("variant", ClassName("godot.core", "Variant"))
@@ -121,12 +112,51 @@ class Class(
                 )
             }
 
+            //RawMemory lazy property
             val rawMemorySpec = PropertySpec.builder(
                     "rawMemory",
                     cOpaquePointerClass,
                     KModifier.PRIVATE, KModifier.FINAL)
                     .delegate("lazy { getSingleton(\"$name\", \"$oldName\") }")
             if (isSingleton) baseCompanion.addProperty(rawMemorySpec.build())
+
+            //Properties
+            val receiverType = if (isSingleton) baseCompanion else typeBuilder
+            properties.forEach {
+                val propertySpec = it.generate(this, tree, icalls)
+                if (propertySpec != null) {
+                    receiverType.addProperty(propertySpec)
+                    val parameterType = it.type
+                    val parameterTypeName = ClassName(if (parameterType.isCoreType()) "godot.core" else "godot", parameterType)
+                    if (it.hasValidSetter && parameterType.isCoreTypeAdaptedForKotlin()) {
+                        val parameterName = it.name
+                        val propertyFunSpec = FunSpec.builder(parameterName)
+                        if (!isSingleton) {
+                            if (tree.doAncestorsHaveProperty(this, it)) {
+                                propertyFunSpec.addModifiers(KModifier.OVERRIDE)
+                            } else {
+                                propertyFunSpec.addModifiers(KModifier.OPEN)
+                            }
+                        }
+                        propertyFunSpec.addParameter(
+                                ParameterSpec.builder(
+                                        "schedule",
+                                        LambdaTypeName.get(
+                                                parameters = *arrayOf(parameterTypeName),
+                                                returnType = ClassName("kotlin", "Unit")
+                                        )
+                                ).build()
+                        )
+                        propertyFunSpec.returns(parameterTypeName)
+                        propertyFunSpec.addStatement("""return $parameterName.apply {
+                                            |    schedule(this)
+                                            |    $parameterName = this
+                                            |}
+                                            |""".trimMargin())
+                        receiverType.addFunction(propertyFunSpec.build())
+                    }
+                }
+            }
 
             typeBuilder.addType(baseCompanion.build())
 
@@ -219,7 +249,7 @@ class Class(
 
                 appendln("$singletonPrefix    // Properties")
                 for (prop in properties)
-                    append(prop.generate(singletonPrefix, this@Class, tree, icalls))
+                    append(prop.gene(singletonPrefix, this@Class, tree, icalls))
                 appendln()
                 appendln()
 
@@ -245,7 +275,7 @@ class Class(
             funSpecs.add(
                     FunSpec.builder("from")
                     .addModifiers(KModifier.INFIX)
-                    .addParameter("other", ClassName(if (classes.contains(node.value)) "godot" else "godot.core", node.value.name))
+                    .addParameter("other", ClassName(if (node.value.name.isCoreType()) "godot.core" else "godot", node.value.name))
                     .addStatement("return $name(\"\").apply { setRawMemory(other.rawMemory) }").build()
             )
             node = node.parent
