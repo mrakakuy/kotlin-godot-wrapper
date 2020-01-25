@@ -1,4 +1,5 @@
 import com.beust.klaxon.Json
+import com.squareup.kotlinpoet.*
 
 
 open class Method(
@@ -11,9 +12,9 @@ open class Method(
         @Json(name = "has_varargs")
         val hasVarargs: Boolean,
         @Json(name = "arguments")
-        val arguments: List<Argument>
-) {
-    private val oldName: String = name
+        val arguments: List<Argument>) {
+
+    val oldName: String = name
 
     init {
         if (!isVirtual)
@@ -23,9 +24,50 @@ open class Method(
 
     var isGetterOrSetter: Boolean = false
 
+    fun generate(cl: Class, tree: Graph<Class>, icalls: MutableSet<ICall>): FunSpec {
+        val generatedFunBuilder = FunSpec.builder(name)
+        val modifiers = mutableListOf<KModifier>()
+        if (!cl.isSingleton) modifiers.add(if (tree.doAncestorsHaveMethod(cl, this)) KModifier.OVERRIDE else KModifier.OPEN)
+        generatedFunBuilder.addModifiers(modifiers)
 
+        //Not sure this is the best way to generate arguments for iCall
+        val callArguments = buildString {
+            arguments.withIndex().forEach {
+                val index = it.index
+                val argument = it.value
 
-    fun generate(prefix: String, cl: Class, tree: Graph<Class>, icalls: MutableSet<ICall>): String {
+                if (index != 0 || !hasVarargs) append(", ")
+                append(argument.name)
+                if (argument.type.isEnum()) append(".id")
+
+                val parameterBuilder = ParameterSpec.builder(
+                        argument.name,
+                        ClassName(if (argument.type.isCoreType()) "godot.core" else "godot",
+                                argument.type.removeEnumPrefix()).copy(nullable = argument.nullable)
+                )
+                if (argument.applyDefault != null) parameterBuilder.defaultValue(argument.applyDefault)
+                generatedFunBuilder.addParameter(parameterBuilder.build())
+            }
+            if (hasVarargs && !isEmpty()) append(", ")
+        }
+        if (hasVarargs) generatedFunBuilder.addParameter("__var_args", Any::class.asTypeName().copy(nullable = true), KModifier.VARARG)
+        val shouldReturn = returnType != "Unit"
+        if (shouldReturn) generatedFunBuilder.returns(ClassName(if (returnType.isCoreType()) "godot.core" else "godot", returnType.removeEnumPrefix()))
+        if (!isVirtual) {
+            generatedFunBuilder.addStatement("%L%L%L%L",
+                    if (shouldReturn) "return " else "",
+                    if (returnType.isEnum()) "${returnType.removeEnumPrefix()}.fromInt("
+                    else if (hasVarargs && returnType != "Variant") "$returnType from "
+                    else "",
+                    constructICall(callArguments, icalls),
+                    if (returnType.isEnum()) ")" else ""
+            )
+        }
+        else generatedFunBuilder.addStatement("throw NotImplementedError(\"$oldName is not implemented for ${cl.name}\")")
+        return generatedFunBuilder.build()
+    }
+
+    fun gene(prefix: String, cl: Class, tree: Graph<Class>, icalls: MutableSet<ICall>): String {
         return buildString {
             if (!isVirtual) {
                 appendln("$prefix    private val ${name}MethodBind: CPointer<godot_method_bind> by lazy { getMB(\"${cl.oldName}\", \"$oldName\") }")
@@ -35,7 +77,6 @@ open class Method(
             //if (isGetterOrSetter)
             //    return@buildString
 
-
             append("$prefix    ")
             if (!cl.isSingleton)
                 if (tree.doAncestorsHaveMethod(cl, this@Method))
@@ -43,7 +84,6 @@ open class Method(
                 else
                     append("open ")
             append("fun $name(")
-
 
             val methodArguments = StringBuilder()
             for ((i, arg) in arguments.withIndex()) {

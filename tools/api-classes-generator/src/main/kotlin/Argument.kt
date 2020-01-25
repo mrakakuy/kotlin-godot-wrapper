@@ -13,6 +13,8 @@ class Argument(
 ) {
     val nullable: Boolean
 
+    val applyDefault: String?
+
     init {
         name = name.convertToCamelCase().escapeKotlinReservedNames()
         type = type.convertTypeToKotlin()
@@ -22,6 +24,18 @@ class Argument(
             nullable = true
         } else
             nullable = false
+        applyDefault = if (hasDefaultValue) {
+            if (nullable) "null"
+            when (type) {
+                "Color", "Variant" -> "$type($defaultValue)"
+                "Boolean" -> defaultValue.toLowerCase()
+                "Double" -> intToFloat(defaultValue)
+                "Vector2", "Vector3", "Rect2" -> "$type$defaultValue"
+                "Transform", "Transform2D", "GDArray", "RID", "PoolVector2Array", "PoolStringArray", "PoolVector3Array", "PoolColorArray", "PoolIntArray", "PoolRealArray", "PoolByteArray" -> "$type()"
+                "String" -> "\"$defaultValue\""
+                else -> defaultValue
+            }
+        } else null
     }
 
 

@@ -1,6 +1,7 @@
 import com.beust.klaxon.Json
 import com.squareup.kotlinpoet.*
 import java.io.File
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 
 
 class Class(
@@ -158,6 +159,19 @@ class Class(
                 }
             }
 
+            //Methods
+            methods.forEach {
+                if (!it.isVirtual) receiverType.addProperty(
+                        PropertySpec.builder(
+                        "${it.name}MethodBind",
+                        ClassName("kotlinx.cinterop", "CPointer")
+                                .parameterizedBy(ClassName("godot.gdnative", "godot_method_bind"))
+                        ).delegate("lazy { getMB(\"${oldName}\", \"${it.oldName}\") }")
+                                .addModifiers(KModifier.PRIVATE, KModifier.FINAL).build()
+                )
+                receiverType.addFunction(it.generate(this, tree, icalls))
+            }
+
             typeBuilder.addType(baseCompanion.build())
 
             //Build Type and create file
@@ -256,7 +270,7 @@ class Class(
 
                 appendln("$singletonPrefix    // Methods")
                 for (method in methods)
-                    append(method.generate(singletonPrefix, this@Class, tree, icalls))
+                    append(method.gene(singletonPrefix, this@Class, tree, icalls))
 
 
                 if (isSingleton)

@@ -43,9 +43,7 @@ class Property(
         if (cl.name == "CPUParticles" && name == "scale") name = "_scale"
 
         val modifiers = mutableListOf<KModifier>()
-        if (!cl.isSingleton) {
-            modifiers.add(if (tree.doAncestorsHaveProperty(cl, this)) KModifier.OVERRIDE else KModifier.OPEN)
-        }
+        if (!cl.isSingleton) modifiers.add(if (tree.doAncestorsHaveProperty(cl, this)) KModifier.OVERRIDE else KModifier.OPEN)
         val propertyType = ClassName(if (type.isCoreType()) "godot.core" else "godot", type)
         val propertySpecBuilder = PropertySpec.builder(
                 "name",
@@ -62,7 +60,7 @@ class Property(
             propertySpecBuilder.setter(
                     FunSpec.setterBuilder()
                             .addParameter("value", propertyType)
-                            .addStatement("${icall.name}(${validSetter.name}MethodBind, this.rawMemory")
+                            .addStatement("${icall.name}(${validSetter.name}MethodBind, this.rawMemory${if (index != -1) ", $index, value)" else ", value)"}")
                             .build()
             )
         }
@@ -75,7 +73,7 @@ class Property(
             propertySpecBuilder.getter(
                     FunSpec.getterBuilder()
                             //Hard to maintain but do not see how to do better (Pierre-Thomas Meisels)
-                            .addStatement("return ${icall.name}(${validGetter.name}MethodBind, this.rawMemory ${if (index != -1) ", $index, value)" else ", value)"}")
+                            .addStatement("return ${icall.name}(${validGetter.name}MethodBind, this.rawMemory${if (index != -1) ", $index)" else ")"}")
                             .build()
             )
         }
