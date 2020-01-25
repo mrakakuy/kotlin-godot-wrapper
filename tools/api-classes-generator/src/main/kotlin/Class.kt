@@ -78,10 +78,11 @@ class Class(
                             .callSuperConstructor("variant")
                             .build()
             )
+            val cOpaquePointerClass = ClassName("kotlinx.cinterop", "COpaquePointer")
             typeBuilder.addFunction(
                     FunSpec.constructorBuilder()
                             .addModifiers(KModifier.INTERNAL)
-                            .addParameter("mem", ClassName("kotlinx.cinterop", "COpaquePointer"))
+                            .addParameter("mem", cOpaquePointerClass)
                             .callSuperConstructor("mem")
                             .build()
             )
@@ -119,6 +120,14 @@ class Class(
                                 .addModifiers(KModifier.CONST, KModifier.FINAL).initializer("%L", value).build()
                 )
             }
+
+            val rawMemorySpec = PropertySpec.builder(
+                    "rawMemory",
+                    cOpaquePointerClass,
+                    KModifier.PRIVATE, KModifier.FINAL)
+                    .delegate("lazy { getSingleton(\"$name\", \"$oldName\") }")
+            if (isSingleton) baseCompanion.addProperty(rawMemorySpec.build())
+
             typeBuilder.addType(baseCompanion.build())
 
             //Build Type and create file
@@ -184,8 +193,6 @@ class Class(
                 if (isSingleton)
                     append("    @ThreadLocal") // TODO: remove later, fixed in konan master
                 appendln("    companion object {")
-
-                append(generateCasts(tree))
 
                 constantsPrefix = "        "
             }
