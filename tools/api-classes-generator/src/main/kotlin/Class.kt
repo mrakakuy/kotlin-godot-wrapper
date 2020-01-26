@@ -166,7 +166,7 @@ class Class(
                         "${it.name}MethodBind",
                         ClassName("kotlinx.cinterop", "CPointer")
                                 .parameterizedBy(ClassName("godot.gdnative", "godot_method_bind"))
-                        ).delegate("lazy { getMB(\"${oldName}\", \"${it.oldName}\") }")
+                        ).delegate("lazy { %M(\"${oldName}\", \"${it.oldName}\") }", MemberName("godot.utils", "getMB"))
                                 .addModifiers(KModifier.PRIVATE, KModifier.FINAL).build()
                 )
                 receiverType.addFunction(it.generate(this, tree, icalls))
@@ -176,7 +176,9 @@ class Class(
 
             //Build Type and create file
             typeBuilder.addType(signalClassBuilder.build())
-            val kotlinFile = FileSpec.builder(packageName, className.simpleName).addType(typeBuilder.build()).build()
+            val kotlinFile = FileSpec.builder(packageName, className.simpleName)
+                    .addType(typeBuilder.build())
+                    .build()
             kotlinFile.writeTo(System.out)
         }
 
@@ -298,7 +300,7 @@ class Class(
                 FunSpec.builder("from")
                         .addModifiers(KModifier.INFIX)
                         .addParameter("other", ClassName("godot.core", "Variant"))
-                        .addStatement("return fromVariant($name(\"\"), other)")
+                        .addStatement("return %M($name(\"\"), other)", MemberName("godot.utils", "fromVariant"))
                         .build()
         )
         return funSpecs

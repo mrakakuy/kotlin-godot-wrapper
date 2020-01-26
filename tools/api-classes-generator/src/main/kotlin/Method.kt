@@ -25,6 +25,8 @@ open class Method(
     var isGetterOrSetter: Boolean = false
 
     fun generate(cl: Class, tree: Graph<Class>, icalls: MutableSet<ICall>): FunSpec {
+        // Uncomment to disable method implementation generation
+        //if (isGetterOrSetter) return null
         val generatedFunBuilder = FunSpec.builder(name)
         val modifiers = mutableListOf<KModifier>()
         if (!cl.isSingleton) modifiers.add(if (tree.doAncestorsHaveMethod(cl, this)) KModifier.OVERRIDE else KModifier.OPEN)
@@ -42,7 +44,7 @@ open class Method(
 
                 val parameterBuilder = ParameterSpec.builder(
                         argument.name,
-                        ClassName(if (argument.type.isCoreType()) "godot.core" else "godot",
+                        ClassName(argument.type.getPackage(),
                                 argument.type.removeEnumPrefix()).copy(nullable = argument.nullable)
                 )
                 if (argument.applyDefault != null) parameterBuilder.defaultValue(argument.applyDefault)
@@ -52,18 +54,22 @@ open class Method(
         }
         if (hasVarargs) generatedFunBuilder.addParameter("__var_args", Any::class.asTypeName().copy(nullable = true), KModifier.VARARG)
         val shouldReturn = returnType != "Unit"
-        if (shouldReturn) generatedFunBuilder.returns(ClassName(if (returnType.isCoreType()) "godot.core" else "godot", returnType.removeEnumPrefix()))
+        if (shouldReturn) generatedFunBuilder.returns(ClassName(returnType.getPackage(), returnType.removeEnumPrefix()))
         if (!isVirtual) {
-            generatedFunBuilder.addStatement("%L%L%L%L",
+            val constructedICall = constructICall(callArguments, icalls)
+            generatedFunBuilder.addStatement("%L%L%M%L%L",
                     if (shouldReturn) "return " else "",
                     if (returnType.isEnum()) "${returnType.removeEnumPrefix()}.fromInt("
                     else if (hasVarargs && returnType != "Variant") "$returnType from "
                     else "",
-                    constructICall(callArguments, icalls),
+                    MemberName("godot.icalls", constructedICall.first),
+                    constructedICall.second,
                     if (returnType.isEnum()) ")" else ""
             )
         }
-        else generatedFunBuilder.addStatement("throw NotImplementedError(\"$oldName is not implemented for ${cl.name}\")")
+        else {
+            if (shouldReturn) generatedFunBuilder.addStatement("throw %T(\"$oldName is not implemented for ${cl.name}\")", NotImplementedError::class)
+        }
         return generatedFunBuilder.build()
     }
 
@@ -147,12 +153,12 @@ open class Method(
     }
 
 
-    private fun constructICall(methodArguments: String, icalls: MutableSet<ICall>): String {
+    private fun constructICall(methodArguments: String, icalls: MutableSet<ICall>): Pair<String, String> {
         if (hasVarargs)
-            return "_icall_varargs(${name}MethodBind, this.rawMemory, arrayOf($methodArguments*__var_args))"
+            return "_icall_varargs" to "(${name}MethodBind, this.rawMemory, arrayOf($methodArguments*__var_args))"
 
         val icall = ICall(returnType, arguments)
         icalls.add(icall)
-        return "${icall.name}(${name}MethodBind, this.rawMemory$methodArguments)"
+        return icall.name to "(${name}MethodBind, this.rawMemory$methodArguments)"
     }
 }

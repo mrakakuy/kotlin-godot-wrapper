@@ -1,8 +1,5 @@
 import com.beust.klaxon.Json
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.*
 
 
 class Property(
@@ -44,9 +41,9 @@ class Property(
 
         val modifiers = mutableListOf<KModifier>()
         if (!cl.isSingleton) modifiers.add(if (tree.doAncestorsHaveProperty(cl, this)) KModifier.OVERRIDE else KModifier.OPEN)
-        val propertyType = ClassName(if (type.isCoreType()) "godot.core" else "godot", type)
+        val propertyType = ClassName(type.getPackage(), type)
         val propertySpecBuilder = PropertySpec.builder(
-                "name",
+                name,
                 propertyType,
                 modifiers)
 
@@ -60,7 +57,8 @@ class Property(
             propertySpecBuilder.setter(
                     FunSpec.setterBuilder()
                             .addParameter("value", propertyType)
-                            .addStatement("${icall.name}(${validSetter.name}MethodBind, this.rawMemory${if (index != -1) ", $index, value)" else ", value)"}")
+                            .addStatement("%M(${validSetter.name}MethodBind, this.rawMemory${if (index != -1) ", $index, value)" else ", value)"}",
+                                    MemberName("godot.icalls", icall.name))
                             .build()
             )
         }
@@ -73,13 +71,14 @@ class Property(
             propertySpecBuilder.getter(
                     FunSpec.getterBuilder()
                             //Hard to maintain but do not see how to do better (Pierre-Thomas Meisels)
-                            .addStatement("return ${icall.name}(${validGetter.name}MethodBind, this.rawMemory${if (index != -1) ", $index)" else ")"}")
+                            .addStatement("return %M(${validGetter.name}MethodBind, this.rawMemory${if (index != -1) ", $index)" else ")"}",
+                                    MemberName("godot.icalls", icall.name))
                             .build()
             )
         }
         else propertySpecBuilder.getter(
                 FunSpec.getterBuilder()
-                        .addStatement("throw UninitializedPropertyAccessException(\"Cannot access property $name: has no getter\")")
+                        .addStatement("throw %T(\"Cannot access property $name: has no getter\")", UninitializedPropertyAccessException::class)
                         .build()
         )
 

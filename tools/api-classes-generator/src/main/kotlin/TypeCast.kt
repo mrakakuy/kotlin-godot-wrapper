@@ -43,8 +43,6 @@ fun String.escapeUnderscore(): String {
     return ret
 }
 
-
-
 fun String.removeEnumPrefix(): String {
     if (this == "")
         return this
@@ -60,8 +58,25 @@ fun String.removeEnumPrefix(): String {
     return ret.replace("::", ".").escapeUnderscore()
 }
 
+fun String.getPackage() =
+        if (isEnum()) {
+            var ret = this
+            val ind = ret.indexOf("enum.")
+            if (ind != -1)
+                ret = ret.drop(ind + 5)
 
-
+            if (ret == "Error")
+                "godot.core"
+            else {
+                ret = ret.replace("::", ".").split(".")[0]
+                if (ret.isPrimitive() || ret == "String") "kotlin"
+                else if (isCoreType()) "godot.core"
+                else "godot"
+            }
+        }
+        else if (isPrimitive() || this == "String") "kotlin"
+        else if (isCoreType()) "godot.core"
+        else "godot"
 
 fun String.isEnum(): Boolean {
     return this.indexOf("enum.") == 0
