@@ -24,8 +24,8 @@ class Argument(
             nullable = true
         } else
             nullable = false
-        applyDefault = if (hasDefaultValue) {
-            if (nullable) "null"
+        applyDefault = if (hasDefaultValue && nullable) "null"
+        else if (hasDefaultValue) {
             when (type) {
                 "Color", "Variant" -> "$type($defaultValue)"
                 "Boolean" -> defaultValue.toLowerCase()

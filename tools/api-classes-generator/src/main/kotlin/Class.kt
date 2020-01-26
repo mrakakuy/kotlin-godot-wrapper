@@ -26,6 +26,7 @@ class Class(
     
     val oldName: String = name
     val shouldGenerate: Boolean
+    val additionalImports = mutableListOf<Pair<String, String>>()
 
     lateinit var className: ClassName
 
@@ -44,9 +45,8 @@ class Class(
             }
         }
 
-        val out = File("$path/$name.kt")
+        val out = File(path)
         out.parentFile.mkdirs()
-        out.createNewFile()
 
         val packageName = "godot"
         className = ClassName(packageName, name)
@@ -118,7 +118,7 @@ class Class(
                     "rawMemory",
                     cOpaquePointerClass,
                     KModifier.PRIVATE, KModifier.FINAL)
-                    .delegate("lazy { getSingleton(\"$name\", \"$oldName\") }")
+                    .delegate("lazy{ %M(\"$name\", \"$oldName\") }", MemberName("godot.utils", "getSingleton"))
             if (isSingleton) baseCompanion.addProperty(rawMemorySpec.build())
 
             //Properties
@@ -166,7 +166,11 @@ class Class(
                         "${it.name}MethodBind",
                         ClassName("kotlinx.cinterop", "CPointer")
                                 .parameterizedBy(ClassName("godot.gdnative", "godot_method_bind"))
-                        ).delegate("lazy { %M(\"${oldName}\", \"${it.oldName}\") }", MemberName("godot.utils", "getMB"))
+                        ).delegate("%L%M(\"${oldName}\",\"${it.oldName}\")%L",
+                                "lazy{ ",
+                                MemberName("godot.utils", "getMB"),
+                                " }"
+                        )
                                 .addModifiers(KModifier.PRIVATE, KModifier.FINAL).build()
                 )
                 receiverType.addFunction(it.generate(this, tree, icalls))
@@ -176,110 +180,113 @@ class Class(
 
             //Build Type and create file
             typeBuilder.addType(signalClassBuilder.build())
-            val kotlinFile = FileSpec.builder(packageName, className.simpleName)
+            val fileBuilder = FileSpec.builder(packageName, className.simpleName)
                     .addType(typeBuilder.build())
-                    .build()
-            kotlinFile.writeTo(System.out)
+            additionalImports.forEach {
+                fileBuilder.addImport(it.first, it.second)
+            }
+            val kotlinFile = fileBuilder.build()
+            kotlinFile.writeTo(out)
         }
 
-        out.writeText(buildString {
-            appendln("@file:Suppress(\"unused\", \"ClassName\", \"EnumEntryName\", \"FunctionName\", \"SpellCheckingInspection\", \"PARAMETER_NAME_CHANGED_ON_OVERRIDE\", \"UnusedImport\", \"PackageDirectoryMismatch\")")
-            appendln("package godot")
-            appendln()
-            if (shouldGenerate) {
-                appendln("import godot.gdnative.*")
-                appendln("import godot.core.*")
-                appendln("import godot.utils.*")
-                appendln("import godot.icalls.*")
-                appendln("import kotlinx.cinterop.*")
-                appendln()
-            }
-            appendln()
-            appendln("// NOTE: THIS FILE IS AUTO GENERATED FROM JSON API CONFIG")
-            appendln()
-            appendln()
-
-
-            var constantsPrefix = ""
-            if (shouldGenerate) {
-                append("open class $name : ").append(if (baseClass == "") "GodotObject" else baseClass).appendln(" {")
-
-                append("    ")
-                if (isInstanciable)
-                    // LUL, ask Godot's author for any explanation about _Thread
-                    appendln("constructor() : super(\"${if (name != "Thread") name else "_Thread"}\")")
-                else
-                    appendln("private constructor() : super(\"\")")
-                appendln("    constructor(variant: Variant) : super(variant)")
-                appendln("    internal constructor(mem: COpaquePointer) : super(mem)")
-                appendln("    internal constructor(name: String) : super(name)")
-                appendln()
-                appendln()
-
-
-                appendln("    // Enums ")
-                appendln()
-                for (enum in enums)
-                    enum.generate(this)
-                appendln()
-                appendln()
-
-
-                appendln("    // Signals")
-                appendln("    class Signal {")
-                appendln("        companion object {")
-                for (sig in signals)
-                    appendln("            ${sig.gene()}")
-                appendln("        }")
-                appendln("    }")
-                appendln()
-                appendln()
-
-
-                if (isSingleton)
-                    append("    @ThreadLocal") // TODO: remove later, fixed in konan master
-                appendln("    companion object {")
-
-                constantsPrefix = "        "
-            }
-
-
-            appendln("$constantsPrefix// Constants")
-            for (constant in constants)
-                appendln("${constantsPrefix}const val ${constant.key}: Long = ${constant.value}")
-            appendln()
-            appendln()
-
-
-            if (shouldGenerate) {
-                if (isSingleton)
-                    appendln("        private val rawMemory: COpaquePointer by lazy { getSingleton(\"$name\", \"$oldName\") }")
-                else
-                    appendln("    }")
-                appendln()
-                appendln()
-
-
-                val singletonPrefix = if (isSingleton) "    " else ""
-
-
-                appendln("$singletonPrefix    // Properties")
-                for (prop in properties)
-                    append(prop.gene(singletonPrefix, this@Class, tree, icalls))
-                appendln()
-                appendln()
-
-
-                appendln("$singletonPrefix    // Methods")
-                for (method in methods)
-                    append(method.gene(singletonPrefix, this@Class, tree, icalls))
-
-
-                if (isSingleton)
-                    appendln("    }")
-                appendln("}")
-            }
-        })
+//        out.writeText(buildString {
+//            appendln("@file:Suppress(\"unused\", \"ClassName\", \"EnumEntryName\", \"FunctionName\", \"SpellCheckingInspection\", \"PARAMETER_NAME_CHANGED_ON_OVERRIDE\", \"UnusedImport\", \"PackageDirectoryMismatch\")")
+//            appendln("package godot")
+//            appendln()
+//            if (shouldGenerate) {
+//                appendln("import godot.gdnative.*")
+//                appendln("import godot.core.*")
+//                appendln("import godot.utils.*")
+//                appendln("import godot.icalls.*")
+//                appendln("import kotlinx.cinterop.*")
+//                appendln()
+//            }
+//            appendln()
+//            appendln("// NOTE: THIS FILE IS AUTO GENERATED FROM JSON API CONFIG")
+//            appendln()
+//            appendln()
+//
+//
+//            var constantsPrefix = ""
+//            if (shouldGenerate) {
+//                append("open class $name : ").append(if (baseClass == "") "GodotObject" else baseClass).appendln(" {")
+//
+//                append("    ")
+//                if (isInstanciable)
+//                    // LUL, ask Godot's author for any explanation about _Thread
+//                    appendln("constructor() : super(\"${if (name != "Thread") name else "_Thread"}\")")
+//                else
+//                    appendln("private constructor() : super(\"\")")
+//                appendln("    constructor(variant: Variant) : super(variant)")
+//                appendln("    internal constructor(mem: COpaquePointer) : super(mem)")
+//                appendln("    internal constructor(name: String) : super(name)")
+//                appendln()
+//                appendln()
+//
+//
+//                appendln("    // Enums ")
+//                appendln()
+//                for (enum in enums)
+//                    enum.generate(this)
+//                appendln()
+//                appendln()
+//
+//
+//                appendln("    // Signals")
+//                appendln("    class Signal {")
+//                appendln("        companion object {")
+//                for (sig in signals)
+//                    appendln("            ${sig.gene()}")
+//                appendln("        }")
+//                appendln("    }")
+//                appendln()
+//                appendln()
+//
+//
+//                if (isSingleton)
+//                    append("    @ThreadLocal") // TODO: remove later, fixed in konan master
+//                appendln("    companion object {")
+//
+//                constantsPrefix = "        "
+//            }
+//
+//
+//            appendln("$constantsPrefix// Constants")
+//            for (constant in constants)
+//                appendln("${constantsPrefix}const val ${constant.key}: Long = ${constant.value}")
+//            appendln()
+//            appendln()
+//
+//
+//            if (shouldGenerate) {
+//                if (isSingleton)
+//                    appendln("        private val rawMemory: COpaquePointer by lazy { getSingleton(\"$name\", \"$oldName\") }")
+//                else
+//                    appendln("    }")
+//                appendln()
+//                appendln()
+//
+//
+//                val singletonPrefix = if (isSingleton) "    " else ""
+//
+//
+//                appendln("$singletonPrefix    // Properties")
+//                for (prop in properties)
+//                    append(prop.gene(singletonPrefix, this@Class, tree, icalls))
+//                appendln()
+//                appendln()
+//
+//
+//                appendln("$singletonPrefix    // Methods")
+//                for (method in methods)
+//                    append(method.gene(singletonPrefix, this@Class, tree, icalls))
+//
+//
+//                if (isSingleton)
+//                    appendln("    }")
+//                appendln("}")
+//            }
+//        })
     }
 
 

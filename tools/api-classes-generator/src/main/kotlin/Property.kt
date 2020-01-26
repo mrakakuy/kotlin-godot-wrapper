@@ -37,6 +37,8 @@ class Property(
 
     fun generate(cl: Class, tree: Graph<Class>, icalls: MutableSet<ICall>): PropertySpec? {
         if (!hasValidGetter && !hasValidSetter) return null
+
+        // Sorry for this, CPUParticles has "scale" property overrides ancestor's "scale", but mismatches type
         if (cl.name == "CPUParticles" && name == "scale") name = "_scale"
 
         val modifiers = mutableListOf<KModifier>()
@@ -78,7 +80,7 @@ class Property(
         }
         else propertySpecBuilder.getter(
                 FunSpec.getterBuilder()
-                        .addStatement("throw %T(\"Cannot access property $name: has no getter\")", UninitializedPropertyAccessException::class)
+                        .addStatement("%L %T(%S)", "throw", UninitializedPropertyAccessException::class, "Cannot access property $name: has no getter")
                         .build()
         )
 

@@ -55,11 +55,17 @@ open class Method(
         if (hasVarargs) generatedFunBuilder.addParameter("__var_args", Any::class.asTypeName().copy(nullable = true), KModifier.VARARG)
         val shouldReturn = returnType != "Unit"
         if (shouldReturn) generatedFunBuilder.returns(ClassName(returnType.getPackage(), returnType.removeEnumPrefix()))
+        if (returnType.isEnum()) {
+            val type = returnType.removeEnumPrefix()
+            if (type.contains('.')) {
+                cl.additionalImports.add(returnType.getPackage() to type.split('.')[0])
+            }
+        }
         if (!isVirtual) {
             val constructedICall = constructICall(callArguments, icalls)
             generatedFunBuilder.addStatement("%L%L%M%L%L",
                     if (shouldReturn) "return " else "",
-                    if (returnType.isEnum()) "${returnType.removeEnumPrefix()}.fromInt("
+                    if (returnType.isEnum()) "${returnType.removeEnumPrefix()}.fromInt( "
                     else if (hasVarargs && returnType != "Variant") "$returnType from "
                     else "",
                     MemberName("godot.icalls", constructedICall.first),
@@ -68,7 +74,7 @@ open class Method(
             )
         }
         else {
-            if (shouldReturn) generatedFunBuilder.addStatement("throw %T(\"$oldName is not implemented for ${cl.name}\")", NotImplementedError::class)
+            if (shouldReturn) generatedFunBuilder.addStatement("%L %T(%S)", "throw", NotImplementedError::class, "$oldName is not implemented for ${cl.name}")
         }
         return generatedFunBuilder.build()
     }
@@ -155,10 +161,10 @@ open class Method(
 
     private fun constructICall(methodArguments: String, icalls: MutableSet<ICall>): Pair<String, String> {
         if (hasVarargs)
-            return "_icall_varargs" to "(${name}MethodBind, this.rawMemory, arrayOf($methodArguments*__var_args))"
+            return "_icall_varargs" to "( ${name}MethodBind, this.rawMemory, arrayOf($methodArguments*__var_args))"
 
         val icall = ICall(returnType, arguments)
         icalls.add(icall)
-        return icall.name to "(${name}MethodBind, this.rawMemory$methodArguments)"
+        return icall.name to "( ${name}MethodBind, this.rawMemory$methodArguments)"
     }
 }
