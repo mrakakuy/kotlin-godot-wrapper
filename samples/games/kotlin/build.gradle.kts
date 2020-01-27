@@ -1,6 +1,7 @@
 buildscript {
     repositories {
         mavenLocal()
+        maven("https://dl.bintray.com/utopia-rise/kotlin-godot")
         jcenter()
     }
     dependencies {
@@ -17,6 +18,7 @@ apply(plugin = "godot-gradle-plugin")
 
 repositories {
     mavenLocal()
+    maven("https://dl.bintray.com/utopia-rise/kotlin-godot")
     jcenter()
 }
 
@@ -37,7 +39,7 @@ kotlin {
                 }
 
                 libraryPath("samples.gdnlib")
-                generateGDNS("${project.rootDir.absolutePath}/project")
+                generateGDNS("${project.rootDir.absolutePath}/../project")
 
                 configs(
                         "src/main/kotlin/godot/samples/games/shmup/classes.json",

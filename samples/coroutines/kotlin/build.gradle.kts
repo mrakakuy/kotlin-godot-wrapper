@@ -1,6 +1,7 @@
 buildscript {
     repositories {
         mavenLocal()
+        maven("https://dl.bintray.com/utopia-rise/kotlin-godot")
         jcenter()
     }
     dependencies {
@@ -11,6 +12,7 @@ buildscript {
 
 repositories {
     mavenLocal()
+    maven("https://dl.bintray.com/utopia-rise/kotlin-godot")
     jcenter()
 }
 
@@ -37,7 +39,7 @@ kotlin {
                 }
 
                 libraryPath("coroutines.gdnlib")
-                generateGDNS("${project.rootDir.absolutePath}/project")
+                generateGDNS("${project.rootDir.absolutePath}/../project")
 
                 configs(
                         "src/main/kotlin/godot/samples/coroutines/classes.json"
