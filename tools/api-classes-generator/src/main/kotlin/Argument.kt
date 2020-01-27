@@ -60,7 +60,7 @@ class Argument(
 
     private fun intToFloat(defaultValue: String): String {
         if (defaultValue.indexOf('.') != -1)
-            return "${defaultValue}"
-        return defaultValue + ".0"
+            return defaultValue
+        return "$defaultValue.0"
     }
 }

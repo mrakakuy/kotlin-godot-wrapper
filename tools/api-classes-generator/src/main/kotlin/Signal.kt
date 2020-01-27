@@ -12,8 +12,4 @@ class Signal(
                 .initializer("\"$name\"")
                 .build()
     }
-
-    fun gene(): String {
-        return "const val ${name.toUpperCase()}: String = \"$name\""
-    }
 }
